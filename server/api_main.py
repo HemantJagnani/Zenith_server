@@ -6,6 +6,7 @@ from pydantic import BaseModel, EmailStr
 from typing import List, Optional
 from datetime import datetime
 import httpx
+import uuid
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 
@@ -19,7 +20,49 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# ... (CORS middleware remains same) ...
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Update in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Pydantic schemas
+class GoogleAuthRequest(BaseModel):
+    id_token: str
+
+class UserResponse(BaseModel):
+    id: str
+    email: str
+    name: Optional[str]
+    picture_url: Optional[str]
+    created_at: datetime
+
+class InterviewCreate(BaseModel):
+    duration: int
+    topic: str
+    transcript: str
+    score: float
+    strengths: List[str]
+    weaknesses: List[str]
+    suggestions: List[str]
+
+class InterviewResponse(BaseModel):
+    id: str
+    date: datetime
+    duration: int
+    topic: str
+    score: float
+    strengths: List[str]
+    weaknesses: List[str]
+    suggestions: List[str]
+
+# Startup event
+@app.on_event("startup")
+async def startup_event():
+    init_db()
 
 # Health check endpoint (no database required)
 @app.get("/health")
@@ -32,8 +75,6 @@ async def health_check():
 @app.get("/")
 async def root():
     return {"message": "Nexus Mock Interview API", "status": "running"}
-
-# ...
 
 # ==================== AUTH ENDPOINTS ====================
 
