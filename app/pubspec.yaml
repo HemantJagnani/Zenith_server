@@ -23,6 +23,7 @@ dependencies:
   page_transition: ^2.2.1
   google_sign_in: 6.1.5
   http: ^1.6.0
+  package_info_plus: ^9.0.0
 
 dev_dependencies:
   flutter_test:

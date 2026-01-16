@@ -1,4 +1,4 @@
-package com.zenith.mock_interview_app
+package com.nexus.mock_interview_app
 
 import io.flutter.embedding.android.FlutterActivity
 

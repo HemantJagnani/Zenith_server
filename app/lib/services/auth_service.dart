@@ -1,5 +1,6 @@
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -8,15 +9,25 @@ class AuthService {
   static const String BASE_URL = 'https://zenithserver-production.up.railway.app';
   
   // Google Sign-In for Android
-  // Client ID is configured via platform-specific files
+  // We MUST provide the WEB Client ID here to get the ID Token for the backend
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],
+    serverClientId: '47229444672-ricp7gavae72qkjqmhvd7h0gqtfvlb4s.apps.googleusercontent.com',
   );
   
   // Sign in with Google
   Future<Map<String, dynamic>?> signInWithGoogle() async {
     try {
       print('Starting Google Sign-In...');
+      // Log the package name to verify rebrand worked
+      try {
+        final info = await PackageInfo.fromPlatform();
+        print('📦 PACKAGE NAME: ${info.packageName}');
+      } catch (e) {
+        print('Could not get package info: $e');
+      }
+
+      print('Google User: ${_googleSignIn.currentUser}');
       
       // 1. Trigger Google Sign-In
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();

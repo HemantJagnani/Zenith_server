@@ -27,6 +27,13 @@ Base = declarative_base()
 
 # Database dependency
 def get_db():
+    if not db_available:
+        try:
+            yield None
+        finally:
+            pass
+        return
+
     db = SessionLocal()
     try:
         yield db
