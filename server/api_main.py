@@ -62,9 +62,13 @@ class InterviewResponse(BaseModel):
 @app.on_event("startup")
 async def startup_event():
     init_db()
-    print("✅ Database initialized")
 
-# Health check
+# Health check endpoint (no database required)
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "message": "Zenith Mock Interview API"}
+
+# Root endpoint
 @app.get("/")
 async def root():
     return {"message": "Zenith Mock Interview API", "status": "running"}

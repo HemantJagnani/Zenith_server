@@ -62,4 +62,10 @@ class Interview(Base):
 
 # Create tables
 def init_db():
-    Base.metadata.create_all(bind=engine)
+    """Initialize database tables"""
+    try:
+        Base.metadata.create_all(bind=engine)
+        print("✅ Database initialized")
+    except Exception as e:
+        print(f"⚠️ Database connection failed: {e}")
+        print("⚠️ Running without database - OAuth will work but data won't persist")

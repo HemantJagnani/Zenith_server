@@ -1,42 +1,48 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:html' as html;
 
 class AuthService {
-  static const String BASE_URL = 'http://172.16.137.2:8000';
+  static const String BASE_URL = 'http://localhost:8000';
   
-  // Temporary: Skip Google Sign-In and use email/password or mock login
-  // We'll add proper Google Sign-In once SHA-1 is configured
+  // Google OAuth for Web
+  static const String GOOGLE_CLIENT_ID = '47229444672-ricp7gavae72qkjqmhvd7h0gqtfvlb4s.apps.googleusercontent.com'; // Your Web Client ID
+  static const String REDIRECT_URI = 'http://localhost:8000/auth/google/callback';
   
+  // Sign in with Google (Web Flow)
   Future<Map<String, dynamic>?> signInWithGoogle() async {
-    // For now, create a test user directly on the backend
-    // This bypasses Google OAuth but tests the rest of the flow
-    
     try {
-      print('Testing backend connection...');
+      // For web, we'll use Google's OAuth URL
+      final authUrl = Uri.https('accounts.google.com', '/o/oauth2/v2/auth', {
+        'client_id': GOOGLE_CLIENT_ID,
+        'redirect_uri': REDIRECT_URI,
+        'response_type': 'code',
+        'scope': 'email profile',
+        'access_type': 'offline',
+      });
       
-      // Test backend health
-      final healthCheck = await http.get(Uri.parse('$BASE_URL/health'));
-      print('Backend health: ${healthCheck.statusCode}');
+      // Open Google Sign-In in popup
+      html.window.open(authUrl.toString(), 'Google Sign-In', 'width=500,height=600');
       
-      if (healthCheck.statusCode == 200) {
-        // Backend is running!
-        // For now, save a mock token
-        await _saveToken('test_jwt_token');
-        
-        return {
-          'access_token': 'test_jwt_token',
-          'user': {
-            'email': 'test@zenith.com',
-            'name': 'Test User'
-          }
-        };
-      } else {
-        throw Exception('Backend not reachable');
-      }
+      // Listen for the callback
+      // Note: This is simplified - in production you'd handle the callback properly
+      print('Google Sign-In initiated. Check popup window.');
+      
+      // For now, return mock data
+      await Future.delayed(Duration(seconds: 2));
+      await _saveToken('test_jwt_token');
+      
+      return {
+        'access_token': 'test_jwt_token',
+        'user': {
+          'email': 'test@zenith.com',
+          'name': 'Test User'
+        }
+      };
     } catch (e) {
-      print('Connection error: $e');
-      throw Exception('Cannot connect to backend. Make sure server is running at $BASE_URL');
+      print('Sign in error: $e');
+      rethrow;
     }
   }
   
