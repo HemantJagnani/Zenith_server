@@ -83,7 +83,16 @@ async def google_auth(
     auth_request: GoogleAuthRequest,
     db: Session = Depends(get_db)
 ):
-    # ... (docstring) ...
+    """
+    Authenticate user with Google ID token
+    
+    Flow:
+    1. Flutter app gets ID token from Google Sign-In
+    2. App sends token to this endpoint
+    3. Server verifies token with Google
+    4. Server creates/updates user in database
+    5. Server returns JWT for future requests
+    """
     try:
         # Verify Google ID token
         idinfo = id_token.verify_oauth2_token(
