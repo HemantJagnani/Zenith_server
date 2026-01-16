@@ -34,7 +34,7 @@ if settings.database_url:
     try:
         engine = create_engine(settings.database_url)
         SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-        db_available = True
+        # db_available will be set to True in init_db() after tables are created
     except Exception as e:
         print(f"⚠️ Failed to create database engine: {e}")
 else:
