@@ -6,10 +6,14 @@ import uuid
 from datetime import datetime
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+from typing import Optional
+
+# Global flag to track database availability
+db_available = False
 
 # Settings
 class Settings(BaseSettings):
-    database_url: str
+    database_url: Optional[str] = None
     
     class Config:
         env_file = ".env"
@@ -21,24 +25,22 @@ def get_settings():
 
 # Database setup
 settings = get_settings()
-engine = create_engine(settings.database_url)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
 
-# Database dependency
-def get_db():
-    if not db_available:
-        try:
-            yield None
-        finally:
-            pass
-        return
+# Initialize engine and session factory
+engine = None
+SessionLocal = None
 
-    db = SessionLocal()
+if settings.database_url:
     try:
-        yield db
-    finally:
-        db.close()
+        engine = create_engine(settings.database_url)
+        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+        db_available = True
+    except Exception as e:
+        print(f"⚠️ Failed to create database engine: {e}")
+else:
+    print("⚠️ No DATABASE_URL found. Running in no-database mode.")
+
+Base = declarative_base()
 
 # Models
 class User(Base):
@@ -67,18 +69,35 @@ class Interview(Base):
     suggestions = Column(ARRAY(Text))
     created_at = Column(TIMESTAMP(timezone=True), default=datetime.utcnow)
 
+# Database dependency
+def get_db():
+    if not db_available or SessionLocal is None:
+        try:
+            yield None
+        finally:
+            pass
+        return
+
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 # Create tables
 def init_db():
     """Initialize database tables"""
     global db_available
+    if engine is None:
+        db_available = False
+        print("⚠️ No database engine configured. Running without persistent storage.")
+        return
+
     try:
         Base.metadata.create_all(bind=engine)
         db_available = True
         print("✅ Database initialized")
     except Exception as e:
         db_available = False
-        print(f"⚠️ Database connection failed: {e}")
+        print(f"⚠️ Database initialization failed: {e}")
         print("⚠️ Running without database - OAuth will work but data won't persist")
-
-# Global flag to track database availability
-db_available = False
