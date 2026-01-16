@@ -1,53 +1,73 @@
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:html' as html;
 
 class AuthService {
-  static const String BASE_URL = 'http://localhost:8000';
+  // Railway Production URL
+  static const String BASE_URL = 'https://zenithserver-production.up.railway.app';
   
-  // Google OAuth for Web
-  static const String GOOGLE_CLIENT_ID = '47229444672-ricp7gavae72qkjqmhvd7h0gqtfvlb4s.apps.googleusercontent.com'; // Your Web Client ID
-  static const String REDIRECT_URI = 'http://localhost:8000/auth/google/callback';
+  // Google Sign-In for Android
+  // Client ID is configured via platform-specific files
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: ['email', 'profile'],
+  );
   
-  // Sign in with Google (Web Flow)
+  // Sign in with Google
   Future<Map<String, dynamic>?> signInWithGoogle() async {
     try {
-      // For web, we'll use Google's OAuth URL
-      final authUrl = Uri.https('accounts.google.com', '/o/oauth2/v2/auth', {
-        'client_id': GOOGLE_CLIENT_ID,
-        'redirect_uri': REDIRECT_URI,
-        'response_type': 'code',
-        'scope': 'email profile',
-        'access_type': 'offline',
-      });
+      print('Starting Google Sign-In...');
       
-      // Open Google Sign-In in popup
-      html.window.open(authUrl.toString(), 'Google Sign-In', 'width=500,height=600');
+      // 1. Trigger Google Sign-In
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       
-      // Listen for the callback
-      // Note: This is simplified - in production you'd handle the callback properly
-      print('Google Sign-In initiated. Check popup window.');
+      if (googleUser == null) {
+        print('User cancelled sign-in');
+        return null;
+      }
       
-      // For now, return mock data
-      await Future.delayed(Duration(seconds: 2));
-      await _saveToken('test_jwt_token');
+      print('Google user: ${googleUser.email}');
       
-      return {
-        'access_token': 'test_jwt_token',
-        'user': {
-          'email': 'test@zenith.com',
-          'name': 'Test User'
-        }
-      };
+      // 2. Get authentication token
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final String? idToken = googleAuth.idToken;
+      
+      if (idToken == null) {
+        throw Exception('Failed to get ID token');
+      }
+      
+      print('Got ID token, sending to backend...');
+      
+      // 3. Send ID token to backend
+      final response = await http.post(
+        Uri.parse('$BASE_URL/auth/google'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'id_token': idToken}),
+      );
+      
+      print('Backend response: ${response.statusCode}');
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        
+        // 4. Save JWT token
+        await _saveToken(data['access_token']);
+        
+        print('✅ Login successful!');
+        return data;
+      } else {
+        print('❌ Backend error: ${response.body}');
+        throw Exception('Authentication failed: ${response.body}');
+      }
     } catch (e) {
-      print('Sign in error: $e');
+      print('❌ Sign in error: $e');
       rethrow;
     }
   }
   
   // Sign out
   Future<void> signOut() async {
+    await _googleSignIn.signOut();
     await _clearToken();
   }
   

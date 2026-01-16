@@ -63,9 +63,15 @@ class Interview(Base):
 # Create tables
 def init_db():
     """Initialize database tables"""
+    global db_available
     try:
         Base.metadata.create_all(bind=engine)
+        db_available = True
         print("✅ Database initialized")
     except Exception as e:
+        db_available = False
         print(f"⚠️ Database connection failed: {e}")
         print("⚠️ Running without database - OAuth will work but data won't persist")
+
+# Global flag to track database availability
+db_available = False
