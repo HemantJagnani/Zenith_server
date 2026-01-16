@@ -12,7 +12,7 @@ class AuthService {
   // We MUST provide the WEB Client ID here to get the ID Token for the backend
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],
-    serverClientId: '47229444672-3hlbr9rekne9pnm11pvt4a0hs92frt04.apps.googleusercontent.com',
+    serverClientId: '47229444672-ricp7gavae72ftt7tktss7p0h0gqlag5.apps.googleusercontent.com',
   );
   
   // Sign in with Google

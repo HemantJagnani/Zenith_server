@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional
 from datetime import datetime
+from contextlib import asynccontextmanager
 import httpx
 import uuid
 from google.oauth2 import id_token
@@ -13,11 +14,22 @@ from google.auth.transport import requests as google_requests
 from database import get_db, User, Interview, init_db
 from auth import create_access_token, get_current_user, TokenData, TokenResponse
 
+# Lifespan event for startup/shutdown
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    print("🚀 Starting Nexus API...")
+    init_db()
+    yield
+    # Shutdown
+    print("👋 Shutting down Nexus API...")
+
 # Initialize FastAPI app
 app = FastAPI(
     title="Nexus Mock Interview API",
     description="Backend API for AI-powered mock interviews",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # CORS middleware
@@ -58,11 +70,6 @@ class InterviewResponse(BaseModel):
     strengths: List[str]
     weaknesses: List[str]
     suggestions: List[str]
-
-# Startup event
-@app.on_event("startup")
-async def startup_event():
-    init_db()
 
 # Health check endpoint (no database required)
 @app.get("/health")
